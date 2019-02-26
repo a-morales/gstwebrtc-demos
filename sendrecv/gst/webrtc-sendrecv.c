@@ -156,7 +156,7 @@ on_incoming_decodebin_stream (GstElement * decodebin, GstPad * pad,
     return;
   }
 
-  g_print("got decodebin pad")
+  g_print("got decodebin pad");
   caps = gst_pad_get_current_caps (pad);
   name = gst_structure_get_name (gst_caps_get_structure (caps, 0));
 
@@ -177,7 +177,7 @@ on_incoming_stream (GstElement * webrtc, GstPad * pad, GstElement * pipe)
   if (GST_PAD_DIRECTION (pad) != GST_PAD_SRC)
     return;
 
-  g_print("got new stream from client connecting")
+  g_print("got new stream from client connecting");
   decodebin = gst_element_factory_make ("decodebin", NULL);
   g_signal_connect (decodebin, "pad-added",
       G_CALLBACK (on_incoming_decodebin_stream), pipe);
@@ -347,24 +347,24 @@ start_pipeline (void)
   gst_element_sync_state_with_parent(webrtc1);
 
   /* setting video recvonly transcevier */
-  /* g_print("setting video transceiver"); */
+  g_print("setting video transceiver");
+  direction = GST_WEBRTC_RTP_TRANSCEIVER_DIRECTION_RECVONLY;
+  caps = gst_caps_from_string(RTP_CAPS_VP8 "96");
+  g_signal_emit_by_name(webrtc1, "add-transceiver", direction, caps, &trans);
+
+  gst_caps_unref(caps);
+  g_object_set (trans, "fec-type", GST_WEBRTC_FEC_TYPE_ULP_RED, "fec-percentage", 100, NULL);
+  gst_object_unref(trans);
+
+  /* setting audio recvonly transceiver */
+  /* g_print("setting audio transceiver"); */
   /* direction = GST_WEBRTC_RTP_TRANSCEIVER_DIRECTION_RECVONLY; */
-  /* caps = gst_caps_from_string(RTP_CAPS_VP8 "96"); */
+  /* caps = gst_caps_from_string(RTP_CAPS_OPUS "98,clock-rate=48000"); */
   /* g_signal_emit_by_name(webrtc1, "add-transceiver", direction, caps, &trans); */
 
   /* gst_caps_unref(caps); */
   /* g_object_set (trans, "fec-type", GST_WEBRTC_FEC_TYPE_ULP_RED, "fec-percentage", 100, NULL); */
   /* gst_object_unref(trans); */
-
-  /* setting audio recvonly transceiver */
-  g_print("setting audio transceiver");
-  direction = GST_WEBRTC_RTP_TRANSCEIVER_DIRECTION_RECVONLY;
-  caps = gst_caps_from_string(RTP_CAPS_OPUS "98,clock-rate=48000");
-  g_signal_emit_by_name(webrtc1, "add-transceiver", direction, caps, &trans);
-
-  gst_caps_unref(caps);
-  /* g_object_set (trans, "fec-type", GST_WEBRTC_FEC_TYPE_ULP_RED, "fec-percentage", 100, NULL); */
-  gst_object_unref(trans);
 
   /* This is the gstwebrtc entry point where we create the offer and so on. It
    * will be called when the pipeline goes to PLAYING. */
