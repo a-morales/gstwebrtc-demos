@@ -347,7 +347,7 @@ start_pipeline (void)
   gst_element_sync_state_with_parent(webrtc1);
 
   /* setting video recvonly transcevier */
-  g_print("setting video transceiver");
+  g_print("setting video transceiver\n");
   direction = GST_WEBRTC_RTP_TRANSCEIVER_DIRECTION_RECVONLY;
   caps = gst_caps_from_string(RTP_CAPS_VP8 "96");
   g_signal_emit_by_name(webrtc1, "add-transceiver", direction, caps, &trans);
@@ -357,14 +357,14 @@ start_pipeline (void)
   gst_object_unref(trans);
 
   /* setting audio recvonly transceiver */
-  /* g_print("setting audio transceiver"); */
-  /* direction = GST_WEBRTC_RTP_TRANSCEIVER_DIRECTION_RECVONLY; */
-  /* caps = gst_caps_from_string(RTP_CAPS_OPUS "98,clock-rate=48000"); */
-  /* g_signal_emit_by_name(webrtc1, "add-transceiver", direction, caps, &trans); */
+  g_print("setting audio transceiver\n");
+  direction = GST_WEBRTC_RTP_TRANSCEIVER_DIRECTION_RECVONLY;
+  caps = gst_caps_from_string(RTP_CAPS_OPUS "98,clock-rate=48000");
+  g_signal_emit_by_name(webrtc1, "add-transceiver", direction, caps, &trans);
 
-  /* gst_caps_unref(caps); */
-  /* g_object_set (trans, "fec-type", GST_WEBRTC_FEC_TYPE_ULP_RED, "fec-percentage", 100, NULL); */
-  /* gst_object_unref(trans); */
+  gst_caps_unref(caps);
+  g_object_set (trans, "fec-type", GST_WEBRTC_FEC_TYPE_ULP_RED, "fec-percentage", 100, NULL);
+  gst_object_unref(trans);
 
   /* This is the gstwebrtc entry point where we create the offer and so on. It
    * will be called when the pipeline goes to PLAYING. */
