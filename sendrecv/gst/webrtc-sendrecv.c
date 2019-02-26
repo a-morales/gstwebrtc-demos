@@ -156,11 +156,12 @@ on_incoming_decodebin_stream (GstElement * decodebin, GstPad * pad,
     return;
   }
 
+  g_print("got decodebin pad")
   caps = gst_pad_get_current_caps (pad);
   name = gst_structure_get_name (gst_caps_get_structure (caps, 0));
 
   if (g_str_has_prefix (name, "video")) {
-    handle_media_stream (pad, pipe, "videoconvert", "autovideosink");
+    handle_media_stream (pad, pipe, "videoconvert", "osxvideosink");
   } else if (g_str_has_prefix (name, "audio")) {
     handle_media_stream (pad, pipe, "audioconvert", "autoaudiosink");
   } else {
@@ -176,6 +177,7 @@ on_incoming_stream (GstElement * webrtc, GstPad * pad, GstElement * pipe)
   if (GST_PAD_DIRECTION (pad) != GST_PAD_SRC)
     return;
 
+  g_print("got new stream from client connecting")
   decodebin = gst_element_factory_make ("decodebin", NULL);
   g_signal_connect (decodebin, "pad-added",
       G_CALLBACK (on_incoming_decodebin_stream), pipe);
@@ -269,6 +271,7 @@ on_negotiation_needed (GstElement * element, gpointer user_data)
   app_state = PEER_CALL_NEGOTIATING;
   promise = gst_promise_new_with_change_func (on_offer_created, user_data, NULL);;
   g_signal_emit_by_name (webrtc1, "create-offer", NULL, promise);
+
 }
 
 #define STUN_SERVER " stun-server=stun://stun.l.google.com:19302 "
@@ -327,24 +330,41 @@ static gboolean
 start_pipeline (void)
 {
   GstStateChangeReturn ret;
-  GError *error = NULL;
+  GstWebRTCRTPTransceiverDirection direction;
+  GstWebRTCRTPTransceiver *trans;
+  GstCaps *caps;
 
-  pipe1 =
-      gst_parse_launch ("webrtcbin bundle-policy=max-bundle name=sendrecv " STUN_SERVER
-      "videotestsrc is-live=true pattern=ball ! videoconvert ! queue ! vp8enc deadline=1 ! rtpvp8pay ! "
-      "queue ! " RTP_CAPS_VP8 "96 ! sendrecv. "
-      "audiotestsrc is-live=true wave=red-noise ! audioconvert ! audioresample ! queue ! opusenc ! rtpopuspay ! "
-      "queue ! " RTP_CAPS_OPUS "97 ! sendrecv. ",
-      &error);
+  pipe1 = gst_pipeline_new("test-pipeline");
 
-  if (error) {
-    g_printerr ("Failed to parse launch: %s\n", error->message);
-    g_error_free (error);
-    goto err;
-  }
+  g_assert_nonnull(pipe1);
 
-  webrtc1 = gst_bin_get_by_name (GST_BIN (pipe1), "sendrecv");
+  webrtc1 = gst_element_factory_make("webrtcbin", "sendrecv");
   g_assert_nonnull (webrtc1);
+  g_object_set(webrtc1, "bundle-policy", 3, NULL);
+
+  gst_bin_add_many(GST_BIN (pipe1), webrtc1, NULL);
+
+  gst_element_sync_state_with_parent(webrtc1);
+
+  /* setting video recvonly transcevier */
+  /* g_print("setting video transceiver"); */
+  /* direction = GST_WEBRTC_RTP_TRANSCEIVER_DIRECTION_RECVONLY; */
+  /* caps = gst_caps_from_string(RTP_CAPS_VP8 "96"); */
+  /* g_signal_emit_by_name(webrtc1, "add-transceiver", direction, caps, &trans); */
+
+  /* gst_caps_unref(caps); */
+  /* g_object_set (trans, "fec-type", GST_WEBRTC_FEC_TYPE_ULP_RED, "fec-percentage", 100, NULL); */
+  /* gst_object_unref(trans); */
+
+  /* setting audio recvonly transceiver */
+  g_print("setting audio transceiver");
+  direction = GST_WEBRTC_RTP_TRANSCEIVER_DIRECTION_RECVONLY;
+  caps = gst_caps_from_string(RTP_CAPS_OPUS "98,clock-rate=48000");
+  g_signal_emit_by_name(webrtc1, "add-transceiver", direction, caps, &trans);
+
+  gst_caps_unref(caps);
+  /* g_object_set (trans, "fec-type", GST_WEBRTC_FEC_TYPE_ULP_RED, "fec-percentage", 100, NULL); */
+  gst_object_unref(trans);
 
   /* This is the gstwebrtc entry point where we create the offer and so on. It
    * will be called when the pipeline goes to PLAYING. */
