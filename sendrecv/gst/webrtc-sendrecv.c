@@ -359,7 +359,7 @@ start_pipeline (void)
   /* setting audio recvonly transceiver */
   g_print("setting audio transceiver\n");
   direction = GST_WEBRTC_RTP_TRANSCEIVER_DIRECTION_RECVONLY;
-  caps = gst_caps_from_string(RTP_CAPS_OPUS "98,clock-rate=48000");
+  caps = gst_caps_from_string(RTP_CAPS_OPUS "97");
   g_signal_emit_by_name(webrtc1, "add-transceiver", direction, caps, &trans);
 
   gst_caps_unref(caps);
